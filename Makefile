@@ -6,16 +6,18 @@ NDK_TOOLCHAIN_TMP=/tmp/ndk-toolchain
 BUSYBOX_PATH=busybox-1.25.1
 BUSYBOX_DOTCONFIG_TEMPLATE=busybox.config
 MKBOOTIMG_PATH=mkbootimg
+SIGNAPK=sign-apk
 
 CP = cp -p
+JAVA = java
 M4 = m4
 MAKE = make
 MKDIR = mkdir -p
 PYTHON=python
 RM = rm -f
-TAR = tar
+ZIP = zip
 
-all: mkbootimg_all
+all: create_flashable_zip
 
 busybox_all: busybox_arm busybox_arm64 busybox_x86
 
@@ -60,25 +62,32 @@ mkbootimg_arm: ndk_arm
 	CC="$(NDK_TOOLCHAIN_TMP)-arm/bin/arm-linux-androideabi-gcc" AR="$(NDK_TOOLCHAIN_TMP)-arm/bin/arm-linux-androideabi-ar rcv" $(MAKE) -C build/$(MKBOOTIMG_PATH)-arm all
 	$(MKDIR) dist/mkbootimg/arm
 	$(CP) build/$(MKBOOTIMG_PATH)-arm/mkbootimg build/$(MKBOOTIMG_PATH)-arm/unpackbootimg dist/mkbootimg/arm/
-	$(TAR) Jvcf dist/mkbootimg/arm.tar.xz dist/mkbootimg/arm/mkbootimg dist/mkbootimg/arm/unpackbootimg
 
 mkbootimg_arm64: ndk_arm64
-	CC="$(NDK_TOOLCHAIN_TMP)-arm64/bin/aarch64-linux-android-gcc" AR="$(NDK_TOOLCHAIN_TMP)-arm64/bin/aarch64-linux-android-ar rcv" $(MAKE) -C $(MKBOOTIMG_PATH) clean all
+	$(MKDIR) build
+	$(CP) -r $(MKBOOTIMG_PATH) build/$(MKBOOTIMG_PATH)-arm64
+	CC="$(NDK_TOOLCHAIN_TMP)-arm64/bin/aarch64-linux-android-gcc" AR="$(NDK_TOOLCHAIN_TMP)-arm64/bin/aarch64-linux-android-ar rcv" $(MAKE) -C build/$(MKBOOTIMG_PATH)-arm64 all
 	$(MKDIR) dist/mkbootimg/arm64
-	$(CP) $(MKBOOTIMG_PATH)/mkbootimg $(MKBOOTIMG_PATH)/unpackbootimg dist/mkbootimg/arm64/
-	$(TAR) Jvcf dist/mkbootimg/arm64.tar.xz $(MKBOOTIMG_PATH)/mkbootimg $(MKBOOTIMG_PATH)/unpackbootimg
+	$(CP) build/$(MKBOOTIMG_PATH)-arm64/mkbootimg build/$(MKBOOTIMG_PATH)-arm64/unpackbootimg dist/mkbootimg/arm64/
 
 mkbootimg_x86: ndk_x86
-	CC="$(NDK_TOOLCHAIN_TMP)-x86/bin/i686-linux-android-gcc" AR="$(NDK_TOOLCHAIN_TMP)-x86/bin/i686-linux-android-ar rcv" $(MAKE) -C $(MKBOOTIMG_PATH) clean all
+	$(MKDIR) build
+	$(CP) -r $(MKBOOTIMG_PATH) build/$(MKBOOTIMG_PATH)-x86
+	CC="$(NDK_TOOLCHAIN_TMP)-x86/bin/i686-linux-android-gcc" AR="$(NDK_TOOLCHAIN_TMP)-x86/bin/i686-linux-android-ar rcv" $(MAKE) -C build/$(MKBOOTIMG_PATH)-x86 all
 	$(MKDIR) dist/mkbootimg/x86
-	$(CP) $(MKBOOTIMG_PATH)/mkbootimg $(MKBOOTIMG_PATH)/unpackbootimg dist/mkbootimg/x86/
-	$(TAR) Jvcf dist/mkbootimg/x86.tar.xz $(MKBOOTIMG_PATH)/mkbootimg $(MKBOOTIMG_PATH)/unpackbootimg
+	$(CP) build/$(MKBOOTIMG_PATH)-x86/mkbootimg build/$(MKBOOTIMG_PATH)-x86/unpackbootimg dist/mkbootimg/x86/
 
 mkbootimg_x86_64: ndk_x86_64
-	CC="$(NDK_TOOLCHAIN_TMP)-x86_64/bin/x86_64-linux-android-gcc" AR="$(NDK_TOOLCHAIN_TMP)-x86_64/bin/x86_64-linux-android-ar rcv" $(MAKE) -C $(MKBOOTIMG_PATH) clean all
+	$(MKDIR) build
+	$(CP) -r $(MKBOOTIMG_PATH) build/$(MKBOOTIMG_PATH)-x86_64
+	CC="$(NDK_TOOLCHAIN_TMP)-x86_64/bin/x86_64-linux-android-gcc" AR="$(NDK_TOOLCHAIN_TMP)-x86_64/bin/x86_64-linux-android-ar rcv" $(MAKE) -C build/$(MKBOOTIMG_PATH)-x86_64 all
 	$(MKDIR) dist/mkbootimg/x86_64
-	$(CP) $(MKBOOTIMG_PATH)/mkbootimg $(MKBOOTIMG_PATH)/unpackbootimg dist/mkbootimg/x86_64/
-	$(TAR) Jvcf dist/mkbootimg/x86_64.tar.xz $(MKBOOTIMG_PATH)/mkbootimg $(MKBOOTIMG_PATH)/unpackbootimg
+	$(CP) build/$(MKBOOTIMG_PATH)-x86_64/mkbootimg build/$(MKBOOTIMG_PATH)-x86_64/unpackbootimg dist/mkbootimg/x86_64/
+
+create_flashable_zip: busybox_all mkbootimg_all
+	$(CP) -r root/* dist/
+	$(ZIP) -r fed-patcher.zip *
+	$(JAVA) -jar $(SIGNAPK)/signapk.jar $(SIGNAPK)/certificate.pem $(SIGNAPK)/key.pk8 fed-patcher.zip fed-patcher_signed.zip
 
 ndk_arm:
 	@echo "Using NDK at $(NDK)"
