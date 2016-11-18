@@ -15,6 +15,7 @@ MAKE = make
 MKDIR = mkdir -p
 PYTHON=python
 RM = rm -f
+SH = sh
 ZIP = zip
 
 all: create_flashable_zip
@@ -86,7 +87,7 @@ mkbootimg_x86_64: ndk_x86_64
 
 create_flashable_zip: busybox_all mkbootimg_all
 	$(CP) -r root/* dist/
-	$(ZIP) -r fed-patcher.zip *
+	@${SH} -c "cd dist && $(ZIP) -r ../fed-patcher.zip *"
 	$(JAVA) -jar $(SIGNAPK)/signapk.jar $(SIGNAPK)/certificate.pem $(SIGNAPK)/key.pk8 fed-patcher.zip fed-patcher_signed.zip
 
 ndk_arm:
@@ -99,7 +100,7 @@ ndk_arm64:
 
 ndk_x86:
 	@echo "Using NDK at $(NDK)"
-	$(PYTHON) $(NDK)/build/tools/make_standalone_toolchain.py --force --arch x86 --api 14 --install-dir $(NDK_TOOLCHAIN_TMP)-x86
+	$(PYTHON) $(NDK)/build/tools/make_standalone_toolchain.py --force --arch x86 --api 21 --install-dir $(NDK_TOOLCHAIN_TMP)-x86
 
 ndk_x86_64:
 	@echo "Using NDK at $(NDK)"
