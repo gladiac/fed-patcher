@@ -26309,6 +26309,11 @@ case ${RO_PRODUCT_DEVICE} in
         FSTAB_LIST=fstab.bullhead
         unpack_bootimg_utils_arm64
         ;;
+    ether)
+        BOOT_BLKDEV=$(${BUSYBOX} readlink -f /dev/block/bootdevice/by-name/boot)
+        FSTAB_LIST='fstab.qcom'
+        unpack_bootimg_utils_arm64
+        ;;
     flounder|flounder_lte)
         BOOT_BLKDEV=$(${BUSYBOX} readlink -f /dev/block/platform/sdhci-tegra.3/by-name/LNX)
         FSTAB_LIST='fstab.flounder fstab.flounder64'
@@ -26409,7 +26414,7 @@ for f in ${FSTAB_LIST}; do
     fi
 
     ${BUSYBOX} cat ${TMP_PATH}/$f \
-    | ${BUSYBOX} sed -e"s/forceencrypt/encryptable/g" \
+    | ${BUSYBOX} sed -e"s/\(force\(encrypt|fdeorfbe\)\)/encryptable/g" \
     | ${BUSYBOX} sed -e"s/,\?verify=[^,]\+\(,.\+\)*$/\1/g" \
     > ${BOOT_RAMDISK}/$f
 

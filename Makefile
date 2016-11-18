@@ -2,6 +2,8 @@
 # FED-Patcher build Makefile
 # 
 
+FEDPATCHER_VERSION='v9'
+
 NDK_TOOLCHAIN_TMP=/tmp/ndk-toolchain
 BUSYBOX_PATH=busybox-1.25.1
 BUSYBOX_DOTCONFIG_TEMPLATE=busybox.config
@@ -13,7 +15,7 @@ JAVA = java
 M4 = m4
 MAKE = make
 MKDIR = mkdir -p
-PYTHON=python
+PYTHON = python
 RM = rm -f
 SH = sh
 ZIP = zip
@@ -88,7 +90,7 @@ mkbootimg_x86_64: ndk_x86_64
 create_flashable_zip: busybox_all mkbootimg_all
 	$(CP) -r root/* dist/
 	@${SH} -c "cd dist && $(ZIP) -r ../fed-patcher.zip *"
-	$(JAVA) -jar $(SIGNAPK)/signapk.jar $(SIGNAPK)/certificate.pem $(SIGNAPK)/key.pk8 fed-patcher.zip fed-patcher_signed.zip
+	$(JAVA) -jar $(SIGNAPK)/signapk.jar $(SIGNAPK)/certificate.pem $(SIGNAPK)/key.pk8 fed-patcher.zip fed-patcher-${FEDPATCHER_VERSION}_signed.zip
 
 ndk_arm:
 	@echo "Using NDK at $(NDK)"
@@ -113,6 +115,7 @@ clean:
 	$(RM) -r $(NDK_TOOLCHAIN_TMP)-arm64
 	$(RM) -r $(NDK_TOOLCHAIN_TMP)-x86
 	$(RM) -r $(NDK_TOOLCHAIN_TMP)-x86_64
+	$(RM) fed-patcher*.zip
 
 ifndef NDK
 	$(error NDK is not defined! Please set the NDK environment variable)
