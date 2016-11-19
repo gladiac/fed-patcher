@@ -2,7 +2,7 @@
 # FED-Patcher build Makefile
 # 
 
-FEDPATCHER_VERSION='v9'
+FEDPATCHER_VERSION=v9
 
 NDK_TOOLCHAIN_TMP=/tmp/ndk-toolchain
 BUSYBOX_PATH=busybox-1.25.1
