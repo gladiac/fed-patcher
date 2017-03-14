@@ -82,7 +82,7 @@ int main(int argc, char** argv)
     
     //printf("Reading header...\n");
     int i;
-    int seeklimit = 4096;
+    int seeklimit = 65536;
     for (i = 0; i <= seeklimit; i++) {
         fseek(f, i, SEEK_SET);
         if(fread(tmp, BOOT_MAGIC_SIZE, 1, f)){};
@@ -107,10 +107,28 @@ int main(int argc, char** argv)
     printf("BOARD_PAGE_SIZE %d\n", header.page_size);
     printf("BOARD_KERNEL_OFFSET %08x\n", header.kernel_addr - base);
     printf("BOARD_RAMDISK_OFFSET %08x\n", header.ramdisk_addr - base);
-    if (header.second_size != 0) {
-        printf("BOARD_SECOND_OFFSET %08x\n", header.second_addr - base);
-    }
+    printf("BOARD_SECOND_OFFSET %08x\n", header.second_addr - base);
     printf("BOARD_TAGS_OFFSET %08x\n", header.tags_addr - base);
+    int a,b,c,y,m = 0;
+    if (header.os_version != 0) {
+        int os_version,os_patch_level;
+        os_version = header.os_version >> 11;
+        os_patch_level = header.os_version&0x7ff;
+        
+        a = (os_version >> 14)&0x7f;
+        b = (os_version >> 7)&0x7f;
+        c = os_version&0x7f;
+        
+        y = (os_patch_level >> 4) + 2000;
+        m = os_patch_level&0xf;
+        
+        if((a < 128) && (b < 128) && (c < 128) && (y >= 2000) && (y < 2128) && (m > 0) && (m <= 12)) {
+            printf("BOARD_OS_VERSION %d.%d.%d\n", a, b, c);
+            printf("BOARD_OS_PATCH_LEVEL %d-%02d\n", y, m);
+        } else {
+            header.os_version = 0;
+        }
+    }
     if (header.dt_size != 0) {
         printf("BOARD_DT_SIZE %d\n", header.dt_size);
     }
@@ -122,12 +140,12 @@ int main(int argc, char** argv)
     //printf("cmdline...\n");
     sprintf(tmp, "%s/%s", directory, basename(filename));
     strcat(tmp, "-cmdline");
-    write_string_to_file(tmp, header.cmdline);
+    write_string_to_file(tmp, (char *)header.cmdline);
     
     //printf("board...\n");
     sprintf(tmp, "%s/%s", directory, basename(filename));
     strcat(tmp, "-board");
-    write_string_to_file(tmp, header.name);
+    write_string_to_file(tmp, (char *)header.name);
     
     //printf("base...\n");
     sprintf(tmp, "%s/%s", directory, basename(filename));
@@ -157,14 +175,12 @@ int main(int argc, char** argv)
     sprintf(ramdiskofftmp, "%08x", header.ramdisk_addr - base);
     write_string_to_file(tmp, ramdiskofftmp);
     
-    if (header.second_size != 0) {
-        //printf("secondoff...\n");
-        sprintf(tmp, "%s/%s", directory, basename(filename));
-        strcat(tmp, "-secondoff");
-        char secondofftmp[200];
-        sprintf(secondofftmp, "%08x", header.second_addr - base);
-        write_string_to_file(tmp, secondofftmp);
-    }
+    //printf("secondoff...\n");
+    sprintf(tmp, "%s/%s", directory, basename(filename));
+    strcat(tmp, "-secondoff");
+    char secondofftmp[200];
+    sprintf(secondofftmp, "%08x", header.second_addr - base);
+    write_string_to_file(tmp, secondofftmp);
     
     //printf("tagsoff...\n");
     sprintf(tmp, "%s/%s", directory, basename(filename));
@@ -172,6 +188,22 @@ int main(int argc, char** argv)
     char tagsofftmp[200];
     sprintf(tagsofftmp, "%08x", header.tags_addr - base);
     write_string_to_file(tmp, tagsofftmp);
+    
+    if (header.os_version != 0) {
+        //printf("os_version...\n");
+        sprintf(tmp, "%s/%s", directory, basename(filename));
+        strcat(tmp, "-osversion");
+        char osvertmp[200];
+        sprintf(osvertmp, "%d.%d.%d", a, b, c);
+        write_string_to_file(tmp, osvertmp);
+
+        //printf("os_patch_level...\n");
+        sprintf(tmp, "%s/%s", directory, basename(filename));
+        strcat(tmp, "-oslevel");
+        char oslvltmp[200];
+        sprintf(oslvltmp, "%d-%02d", y, m);
+        write_string_to_file(tmp, oslvltmp);
+    }
     
     total_read += sizeof(header);
     //printf("total read: %d\n", total_read);

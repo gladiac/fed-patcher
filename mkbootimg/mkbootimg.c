@@ -71,6 +71,8 @@ int usage(void)
             "       [ --ramdisk_offset <base offset> ]\n"
             "       [ --second_offset <base offset> ]\n"
             "       [ --tags_offset <base offset> ]\n"
+            "       [ --os_version <A.B.C version> ]\n"
+            "       [ --os_patch_level <YYYY-MM-DD date> ]\n"
             "       [ --id ]\n"
             "       -o|--output <filename>\n"
             );
@@ -108,6 +110,47 @@ int write_padding(int fd, unsigned pagesize, unsigned itemsize)
     }
 }
 
+int parse_os_version(char *ver)
+{
+    char *token;
+    int verArray[3] = {0};
+    int a,b,c = 0;
+    int i = 0;
+
+    token = strtok(ver, ".");
+    while(token != NULL) {
+        sscanf(token, "%d", &verArray[i]);
+        token = strtok(NULL, ".");
+        i++;
+    }
+    a = verArray[0];
+    b = verArray[1];
+    c = verArray[2];
+    if((a < 128) && (b < 128) && (c < 128))
+        return (a << 14) | (b << 7) | c;
+    return 0;
+}
+
+int parse_os_patch_level(char *lvl)
+{
+    char *token;
+    int lvlArray[2] = {0};
+    int y,m = 0;
+    int i = 0;
+
+    token = strtok(lvl, "-");
+    while(token != NULL) {
+        sscanf(token, "%d", &lvlArray[i]);
+        token = strtok(NULL, "-");
+        i++;
+    }
+    y = lvlArray[0] - 2000;
+    m = lvlArray[1];
+    if((y >= 0) && (y < 128) && (m > 0) && (m <= 12))
+        return (y << 4) | m;
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
     boot_img_hdr hdr;
@@ -121,6 +164,8 @@ int main(int argc, char **argv)
     char *cmdline = "";
     char *bootimg = NULL;
     char *board = "";
+    int os_version = 0;
+    int os_patch_level = 0;
     char *dt_fn = NULL;
     void *dt_data = NULL;
     uint32_t pagesize = 2048;
@@ -183,6 +228,10 @@ int main(int argc, char **argv)
                 }
             } else if(!strcmp(arg, "--dt")) {
                 dt_fn = val;
+            } else if(!strcmp(arg, "--os_version")) {
+                os_version = parse_os_version(val);
+            } else if(!strcmp(arg, "--os_patch_level")) {
+                os_patch_level = parse_os_patch_level(val);
             } else {
                 return usage();
             }
@@ -196,6 +245,8 @@ int main(int argc, char **argv)
     hdr.ramdisk_addr = base + ramdisk_offset;
     hdr.second_addr =  base + second_offset;
     hdr.tags_addr =    base + tags_offset;
+
+    hdr.os_version = (os_version << 11) | os_patch_level;
 
     if(bootimg == 0) {
         fprintf(stderr,"error: no output filename specified\n");
