@@ -26309,7 +26309,7 @@ case ${RO_PRODUCT_DEVICE} in
         FSTAB_LIST=fstab.bullhead
         unpack_bootimg_utils_arm64
         ;;
-    ether)
+    ether|x2|potter)
         BOOT_BLKDEV=$(${BUSYBOX} readlink -f /dev/block/bootdevice/by-name/boot)
         FSTAB_LIST='fstab.qcom'
         unpack_bootimg_utils_arm64
