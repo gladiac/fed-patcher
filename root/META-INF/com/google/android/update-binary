@@ -26329,6 +26329,11 @@ case ${RO_PRODUCT_DEVICE} in
         FSTAB_LIST=fstab.shamu
         unpack_bootimg_utils_arm32
         ;;
+    natrium)
+        BOOT_BLKDEV=$(${BUSYBOX} readlink -f /dev/block/platform/soc/624000.ufshc/by-name/boot)
+        FSTAB_LIST=fstab.qcom
+        unpack_bootimg_utils_arm64
+        ;;
     *)
         ui_print "! This device is not supported!"
         exit 1
